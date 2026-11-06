@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <style>
 /* ===================== SALARY CALCULATOR (unchanged) ===================== */
 :root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#667085;--bd:#e3e6ea;--ac:#ed2880;--ok:#15803d;--bad:#b91c1c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -56,18 +55,11 @@ summary{font-size:14px;font-weight:700;color:var(--ac);cursor:pointer}
 .amt{float:right;color:var(--ok);font-weight:700;font-size:14px}
 .ohr .amt{float:none}
 .amt.neg{color:var(--bad)}
-#authwall{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
-.authbox{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px}
-.authtitle{margin:0;text-align:center;font-size:22px;color:var(--ac)}
-#authform,#newpass{display:flex;flex-direction:column;gap:12px}
-.authtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.atab{font:inherit;font-weight:700;padding:9px;border-radius:10px;border:1px solid var(--bd);background:transparent;color:var(--tx);cursor:pointer}
-.atab[aria-selected="true"]{background:var(--ac);border-color:var(--ac);color:#fff}
-.abtn{font:inherit;font-weight:700;padding:11px;border-radius:10px;border:0;background:var(--ac);color:#fff;cursor:pointer;width:100%}
-.abtn:disabled{opacity:.6;cursor:default}
-.amsg{margin:0;font-size:13px;color:var(--mu);min-height:1.2em}.amsg.bad{color:var(--bad)}
-.acct{max-width:960px;margin:0 auto;padding:0 16px 8px;display:flex;justify-content:flex-end;align-items:center;gap:12px;font-size:12px;color:var(--mu)}
-.lo{font:inherit;font-size:12px;font-weight:700;color:var(--ac);background:none;border:1px solid var(--ac);border-radius:8px;padding:3px 10px;cursor:pointer}
+.etl{display:block;font-size:13px;color:var(--mu);margin-bottom:4px}
+.etb{display:inline-grid;grid-template-columns:1fr 1fr;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.etbtn{font:inherit;font-size:14px;font-weight:700;padding:8px 18px;border:0;background:transparent;color:var(--mu);cursor:pointer}
+.etbtn+.etbtn{border-left:1px solid var(--bd)}
+.etbtn[aria-pressed="true"]{background:var(--ac);color:#fff}
 .xr{display:flex;justify-content:flex-start;align-items:center;gap:10px;padding:10px 14px}
 .xr h2{margin:0}
 .xr input{width:96px;margin:0;padding:7px 9px;text-align:center}
@@ -214,29 +206,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 </head>
 <body>
 
-<div id="authwall" hidden>
- <div class="authbox">
-  <h2 class="authtitle">Salary Calculator</h2>
-  <div id="authload" class="amsg">Loading…</div>
-  <form id="authform" hidden>
-   <div class="authtabs"><button type="button" class="atab" data-m="in" aria-selected="true">Log in</button><button type="button" class="atab" data-m="up" aria-selected="false">Sign up</button></div>
-   <label>Work email<input type="email" id="aemail" autocomplete="email" required></label>
-   <label>Password<input type="password" id="apass" autocomplete="current-password" minlength="8" required></label>
-   <button type="submit" id="asubmit" class="abtn">Log in</button>
-   <p id="amsg" class="amsg" role="status"></p>
-   <a href="#" id="aforgot" class="ck">Forgot password?</a>
-  </form>
-   <button type="button" id="aguest" class="atab">Continue as guest</button>
-  <form id="newpass" hidden>
-   <label>New password<input type="password" id="np" autocomplete="new-password" minlength="8" required></label>
-   <button type="submit" class="abtn">Save new password</button>
-   <p id="npmsg" class="amsg" role="status"></p>
-  </form>
- </div>
-</div>
-
 <nav class="topnav" aria-label="Calculators">
-  <div class="acct" id="acct" hidden><span id="acctmail"></span><span id="savest"></span><button type="button" class="lo" id="logout">Log out</button></div>
   <div class="topnav-in" role="tablist">
     <button type="button" role="tab" class="navtab" id="nav-salary" data-view="salary" aria-selected="true" aria-controls="salary-view">Salary calculator</button>
     <button type="button" role="tab" class="navtab" id="nav-absence" data-view="absence" aria-selected="false" aria-controls="absence-view">Absenteeism calculator</button>
@@ -324,12 +294,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <section class="bk"><details><summary>Overtime?<span class="otw"> (weekly)</span> <a href="#ss" class="ck otw" id="ckss">check scheme settings</a><span class="amt" id="amt-ot"></span></summary>
 <div class="ohr" style="justify-content:space-between;margin-bottom:8px"><label class="chal"><input type="checkbox" id="chal"> Challenge is active?</label><button type="button" class="add" id="addwk" aria-label="Add another week" title="Add another week">+</button></div>
 <p class="hint" style="margin-top:6px">Enter the figures for a single week (e.g. 27 Sep – 3 Oct). Had overtime in more than one week this month? Tap + to add another week – each week is checked and paid on its own. Uses the hourly rate from Base pay. Leave overtime hours at 0 if not applicable.</p>
-<label>Employment type
-<select id="otype"><option value="ft">Full-timer</option><option value="pt">Part-timer</option></select></label>
+<div class="et"><span class="etl">Employment type</span>
+<div class="etb" role="group" aria-label="Employment type"><button type="button" class="etbtn" data-v="ft" aria-pressed="true">Full-timers</button><button type="button" class="etbtn" data-v="pt" aria-pressed="false">Part-timers</button></div>
+<select id="otype" hidden><option value="ft">Full-timer</option><option value="pt">Part-timer</option></select></div>
 <div id="wks"><div class="wk"><div class="wkh"><span class="wn">Week 1</span></div>
 <div class="g">
-<label>Total hours worked this week<input type="number" class="wh" value="0" step="0.5" min="0"></label>
-<label>Required overtime hours<input type="number" class="oth" value="0" step="0.5" min="0"></label>
+<label>Total hours worked this week <span class="sm">(without overtime)</span><input type="number" class="wh" value="0" step="0.5" min="0"></label>
+<label>Overtime worked<input type="number" class="oth" value="0" step="0.5" min="0"></label>
 <label>Weekly ABS %<input type="number" class="wabs" value="0" step="0.1" min="0"></label>
 </div></div></div>
 <details id="ss"><summary>Review scheme settings (change if the rules change)</summary>
@@ -339,8 +310,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <label>Max weekly ABS % allowed<input type="number" id="wabsmax" value="6" step="0.1" min="0"></label>
 <label>Hours gate: full-timers<input type="number" id="gateft" value="45" step="0.5" min="0"></label>
 <label>Hours gate: part-timers<input type="number" id="gatept" value="36" step="0.5" min="0"></label>
-<label>Bracket calculation
-<select id="omode"><option value="flat" selected>Flat (all hours at the top bracket reached)</option><option value="tier">Tiered (each bracket's hours at its rate)</option></select></label>
 </div></details>
 <details id="brs"><summary>Review overtime bracket rates (change if the rates change)</summary>
 <p class="hint" style="margin-top:10px">Pay rate for each bracket, as a % of the hourly rate. Hours up to 6 use the standard OT rate in scheme settings above.</p>
@@ -502,6 +471,9 @@ const S=id=>document.getElementById(id).value;
 const f=(n,d=2)=>n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const pc=r=>(Math.round(r*1000)/10)+'%';
 function tier(n){let t=0;t+=Math.min(n,11)*2;if(n>11)t+=(Math.min(n,21)-11)*3;if(n>21)t+=(n-21)*4;return t}
+/* Flat: every unit is paid at the rate of the highest step reached */
+function flatTier(n){return n*(n>21?4:n>11?3:2)}
+function puTier(n){return n*(n>=21?4:n>=11?3:2)}
 /* Overtime brackets: [from, to, multiplier]. A null multiplier = standard OT rate (hours up to 6 are not in any bracket). */
 const BR=[[0,6,null,'Up to 6 hrs'],[6,10,1.7,'Bracket 1 (6–10)'],[10,20,2.25,'Bracket 2 (10–20)'],[20,30,2.5,'Bracket 3 (20–30)'],[30,Infinity,3,'Bracket 4 (30+)']];
 function calc(){
@@ -523,14 +495,15 @@ const kpi=adhOk?raw*absMult:0;
 const l0=$('l0'),l1=$('l1'),l2=$('l2'),acc=$('acc');
 const qual=l1+l2;
 const lineInc=l0*3+l1*10+l2*20+acc*10+Math.floor(qual/3)*30;
-const pu=tier($('pu')),dp=tier($('dp'));
+const pu=puTier($('pu')),dp=flatTier($('dp'));
 const du=$('du')*5;
 const gross=lineInc+pu+dp+du,tax=gross*0.2,net=gross-tax;
 
 /* Overtime */
 const std=$('stdm')/100,minH=$('minh'),absMax=$('wabsmax');
 [1,2,3,4].forEach(i=>{BR[i][2]=$('br'+i)/100});
-const full=S('otype')==='ft',gate=full?$('gateft'):$('gatept'),flat=S('omode')==='flat';
+const full=S('otype')==='ft',gate=full?$('gateft'):$('gatept'),flat=true;
+document.querySelectorAll('.etbtn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S('otype')?'true':'false'));
 const mark=ok=>ok?'✓':'✗';
 const chal=document.getElementById('chal').checked;
 const W=[...document.querySelectorAll('.wk')],many=W.length>1;
@@ -604,7 +577,7 @@ goal({td:transDays,chal,total:totalEgp,rate,hr,days,absH,abs,adhOk,raw,absMult,t
  inc:{l0,l1,l2,acc,pu:$('pu'),dp:$('dp'),du:$('du')}});
 }
 /* Salary goal: suggestions for reaching a target amount (each idea is estimated on its own) */
-function incNet(a){const q=a.l1+a.l2;return(a.l0*3+a.l1*10+a.l2*20+a.acc*10+Math.floor(q/3)*30+tier(a.pu)+tier(a.dp)+a.du*5)*0.8}
+function incNet(a){const q=a.l1+a.l2;return(a.l0*3+a.l1*10+a.l2*20+a.acc*10+Math.floor(q/3)*30+puTier(a.pu)+flatTier(a.dp)+a.du*5)*0.8}
 function otEligPay(ot,hr,std,flat){
  if(flat){const b=BR.find(b=>ot>b[0]&&ot<=b[1]),r=b[2]||std;return ot*hr*r}
  let p=0;BR.forEach(b=>{const h=Math.max(0,Math.min(ot,b[1])-b[0]);if(h>0)p+=h*hr*(b[2]||std)});return p}
@@ -651,6 +624,7 @@ add.addEventListener('click',()=>{
 wks.addEventListener('click',e=>{if(e.target.classList.contains('x')){e.target.closest('.wk').remove();wkSync()}});
 document.getElementById('ckss').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const s=document.getElementById('ss');s.open=true;s.scrollIntoView({block:'center'})});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.stb');if(!b)return;const i=document.getElementById(b.dataset.n);i.value=Math.max(0,(parseInt(i.value)||0)+parseInt(b.dataset.d));calc()});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.etbtn');if(!b)return;const s=document.getElementById('otype');if(s.value===b.dataset.v)return;s.value=b.dataset.v;s.dispatchEvent(new Event('change',{bubbles:true}))});
 document.addEventListener('input',calc);document.addEventListener('change',calc);
 calc();
 </script>
@@ -831,180 +805,8 @@ calc();
     els.att.focus();
   });
 
-  // Used by the login/save script to store and restore this tab's numbers.
-  window.absIO = {
-    get: function () { saveCurrent(); return { state: JSON.parse(JSON.stringify(state)), current: current, target: els.target.value }; },
-    set: function (d) {
-      if (!d || !d.state) return;
-      Object.keys(TYPES).forEach(function (k) { if (d.state[k]) state[k] = d.state[k]; });
-      if (TYPES[d.current]) current = d.current;
-      if (d.target !== undefined) els.target.value = d.target;
-      Object.keys(TYPES).forEach(function (k) { byId("ab-tab-" + k).setAttribute("aria-selected", k === current ? "true" : "false"); });
-      loadCurrent();
-      render();
-    }
-  };
-
   loadCurrent();
   render();
-})();
-</script>
-
-<!-- ===================== LOGIN + SAVING (Supabase) ===================== -->
-<script>
-(function () {
-  /* Fill these in from Supabase: Project Settings > API. The anon key is safe to publish. */
-  var SUPABASE_URL = 'https://nfljpzlfmvwjnjngygpj.supabase.co';
-  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mbGpwemxmbXZ3am5qbmd5Z3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MDc3MDgsImV4cCI6MjEwODk4MzcwOH0.ZKn1cAidk3ud_paizELBOI9iMjj7ivXE-YKffIkumec';
-  var ALLOWED_DOMAINS = ['intelcia.com', 'gmail.com', 'outlook.com', 'optimum.com'];
-
-  var $i = function (id) { return document.getElementById(id); };
-  // Not set up yet: the calculator just works without login or saving.
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase) return;
-
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  var wall = $i('authwall'), form = $i('authform'), loadEl = $i('authload'), msg = $i('amsg');
-  var mode = 'in', user = null, ready = false, timer = null, recovery = false;
-  wall.hidden = false;
-
-  function say(t, bad) { msg.textContent = t; msg.className = 'amsg' + (bad ? ' bad' : ''); }
-  function status(t, bad) { var s = $i('savest'); s.textContent = t; s.style.color = bad ? 'var(--bad)' : ''; }
-  function setMode(m) {
-    mode = m;
-    Array.prototype.forEach.call(document.querySelectorAll('.atab'), function (b) { b.setAttribute('aria-selected', b.getAttribute('data-m') === m ? 'true' : 'false'); });
-    $i('asubmit').textContent = m === 'in' ? 'Log in' : 'Sign up';
-    $i('apass').autocomplete = m === 'in' ? 'current-password' : 'new-password';
-    say('');
-  }
-  Array.prototype.forEach.call(document.querySelectorAll('.atab'), function (b) {
-    b.addEventListener('click', function () { setMode(b.getAttribute('data-m')); });
-  });
-
-  /* ---- collect / apply the numbers ---- */
-  function collect() {
-    var d = { f: {}, weeks: [] };
-    Array.prototype.forEach.call(document.querySelectorAll('#salary-view input[id], #salary-view select[id]'), function (e) {
-      d.f[e.id] = e.type === 'checkbox' ? e.checked : e.value;
-    });
-    Array.prototype.forEach.call(document.querySelectorAll('#wks .wk'), function (w) {
-      d.weeks.push({ wh: w.querySelector('.wh').value, oth: w.querySelector('.oth').value, wabs: w.querySelector('.wabs').value });
-    });
-    d.abs = window.absIO ? window.absIO.get() : null;
-    return d;
-  }
-  function apply(d) {
-    if (!d) return;
-    window.__restoring = true;
-    try {
-      var wk = $i('wks'), n = Math.min(5, Math.max(1, (d.weeks && d.weeks.length) || 1));
-      while (wk.children.length < n) $i('addwk').click();
-      while (wk.children.length > n) wk.lastElementChild.remove();
-      (d.weeks || []).forEach(function (x, i) {
-        var w = wk.children[i]; if (!w) return;
-        w.querySelector('.wh').value = x.wh; w.querySelector('.oth').value = x.oth; w.querySelector('.wabs').value = x.wabs;
-      });
-      Object.keys(d.f || {}).forEach(function (id) {
-        var e = $i(id);
-        if (!e || !$i('salary-view').contains(e)) return;
-        if (e.type === 'checkbox') e.checked = !!d.f[id]; else e.value = d.f[id];
-      });
-      if (d.abs && window.absIO) window.absIO.set(d.abs);
-    } finally { window.__restoring = false; }
-    wkSync();
-  }
-
-  /* ---- load / save ---- */
-  async function loadData() {
-    ready = false; status('Loading…');
-    var r = await sb.from('salary_entries').select('data').eq('user_id', user.id).maybeSingle();
-    if (r.error) { status('Could not load your saved numbers', true); return; }
-    if (r.data) apply(r.data.data);
-    ready = true; status('Saved');
-  }
-  async function save() {
-    if (!user || !ready) return;
-    status('Saving…');
-    var r = await sb.from('salary_entries').upsert({ user_id: user.id, data: collect(), updated_at: new Date().toISOString() });
-    status(r.error ? 'Not saved. Check your connection' : 'Saved', !!r.error);
-  }
-  function queue() { if (!user || !ready) return; clearTimeout(timer); status('Unsaved changes…'); timer = setTimeout(function () { timer = null; save(); }, 1200); }
-  ['input', 'change', 'click'].forEach(function (ev) {
-    document.addEventListener(ev, function (e) {
-      var t = e.target;
-      if (!t || !t.closest || t.closest('#authwall')) return;
-      if (ev === 'click' && !t.closest('.stb, #addwk, .x, .stab, #ab-reset')) return;
-      queue();
-    });
-  });
-  document.addEventListener('visibilitychange', function () { if (document.hidden && timer) { clearTimeout(timer); timer = null; save(); } });
-
-  /* ---- screens ---- */
-  function showApp(u) {
-    user = u; wall.hidden = true;
-    $i('acct').hidden = false; $i('acctmail').textContent = u.email;
-    loadData();
-  }
-  function showLogin() {
-    user = null; ready = false; $i('acct').hidden = true;
-    loadEl.hidden = true; $i('newpass').hidden = true; form.hidden = false; wall.hidden = false;
-  }
-
-  sb.auth.getSession().then(function (r) {
-    var s = r.data && r.data.session;
-    if (s) showApp(s.user); else if (!recovery) showLogin();
-  });
-  sb.auth.onAuthStateChange(function (ev, s) {
-    if (ev === 'PASSWORD_RECOVERY') {
-      recovery = true; wall.hidden = false; loadEl.hidden = true; form.hidden = true; $i('newpass').hidden = false;
-    } else if (ev === 'SIGNED_OUT') {
-      showLogin();
-    } else if (ev === 'SIGNED_IN' && s && !recovery && (!user || user.id !== s.user.id)) {
-      showApp(s.user);
-    }
-  });
-
-  /* ---- log in / sign up ---- */
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var em = $i('aemail').value.trim().toLowerCase(), pw = $i('apass').value;
-    if (mode === 'up' && !ALLOWED_DOMAINS.some(function (d) { return em.endsWith('@' + d); })) { say('Use one of these emails: ' + ALLOWED_DOMAINS.map(function (d) { return '@' + d; }).join(', '), true); return; }
-    if (pw.length < 8) { say('Password must be at least 8 characters.', true); return; }
-    $i('asubmit').disabled = true; say('Please wait…');
-    try {
-      if (mode === 'in') {
-        var r = await sb.auth.signInWithPassword({ email: em, password: pw });
-        if (r.error) say(r.error.message, true); else say('');
-      } else {
-        var r2 = await sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.origin + location.pathname } });
-        if (r2.error) say(r2.error.message, true);
-        else if (!r2.data.session) say('Check your email and click the confirmation link, then log in.');
-      }
-    } catch (err) { say('Something went wrong. Please try again.', true); }
-    $i('asubmit').disabled = false;
-  });
-  $i('aforgot').addEventListener('click', async function (e) {
-    e.preventDefault();
-    var em = $i('aemail').value.trim().toLowerCase();
-    if (!em) { say('Enter your email above first.', true); return; }
-    var r = await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname });
-    say(r.error ? r.error.message : 'If this email has an account, a reset link is on its way.', !!r.error);
-  });
-  $i('newpass').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var r = await sb.auth.updateUser({ password: $i('np').value });
-    if (r.error) { $i('npmsg').textContent = r.error.message; $i('npmsg').className = 'amsg bad'; return; }
-    recovery = false;
-    var g = await sb.auth.getSession();
-    if (g.data && g.data.session) showApp(g.data.session.user); else showLogin();
-  });
-  $i('aguest').addEventListener('click', function () {
-  wall.hidden = true;
-});
-  $i('logout').addEventListener('click', async function () {
-    if (timer) { clearTimeout(timer); timer = null; await save(); }
-    await sb.auth.signOut();
-    location.reload();
-  });
 })();
 </script>
 
